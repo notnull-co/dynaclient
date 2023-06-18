@@ -26,13 +26,13 @@ import (
 To create a DynaClient, use the `New` function:
 
 ```go
-type MyStruct struct {
+type ResponseDTO struct {
     Id string
     Username string
     Age int
 }
 
-c := client.New[MyStruct]()
+c := client.New[ResponseDTO]()
 ```
 
 You can optionally pass a custom `http.Client` to the `New` function if you want to use a specific HTTP client configuration.
@@ -42,13 +42,13 @@ You can optionally pass a custom `http.Client` to the `New` function if you want
 By default, the DynaClient uses the JSON parser provided by the library. You can also set a custom parser or switch between different parsers using the `WithCustomParser` and `WithParser` methods:
 
 ```go
-c := client.New[MyStruct]().WithCustomParser(myCustomParser)
+c := client.New[ResponseDTO]().WithCustomParser(myCustomParser)
 ```
 
 or
 
 ```go
-c := client.New[MyStruct]().WithParser(parser.Yaml)
+c := client.New[ResponseDTO]().WithParser(parser.Yaml)
 ```
 
 ### Making Requests
@@ -56,10 +56,10 @@ c := client.New[MyStruct]().WithParser(parser.Yaml)
 To make a request with the DynaClient, create a `DynaRequest` using the `NewRequest` function. The `NewRequest` function is designed to be very similar to the original `http.NewRequest` function in Go's standard library:
 
 ```go
-myStruct := MyStruct{
+myStruct := MyPayloadStruct{
     Id: "abc-def-ghi",
-    Username: "Murillo",
-    Age: 69,
+    Book: "The tale of Muri",
+    Price: 69,
 }
 
 req, err := client.NewRequest(http.HttpMethodPost, "https://api.example.com", myStruct)
