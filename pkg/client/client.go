@@ -123,11 +123,12 @@ func (c *DynaClient[T]) Do(req *DynaRequest) (*T, *DynaResponse, error) {
 	}
 
 	if response.Body != nil {
+		// TODO: Check if a better way to read the body twice or more exists
 		bodyBytes, _ := io.ReadAll(dynaResponse.Response.Body)
 		dynaResponse.Response.Body.Close()
 		dynaResponse.Response.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
-		responseValue, err := c.Decode(dynaResponse.Response.Body)
+		responseValue, err := c.Decode(ioutil.NopCloser(bytes.NewBuffer(bodyBytes)))
 
 		if err != nil {
 			return nil, &dynaResponse, err
