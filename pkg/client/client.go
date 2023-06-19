@@ -13,12 +13,33 @@ import (
 type DynaClient[T any] struct {
 	http.Client
 	parser.DynaParser[T]
+	failCondition func(*http.Response) error
 }
 
 type DynaRequest struct {
 	*http.Request
 	parser.DynaEncoder
 	payload any
+}
+
+type DynaResponse struct {
+	*http.Response
+	failed bool
+}
+
+func (d *DynaResponse) Body() []byte {
+	bodyBytes, _ := io.ReadAll(d.Response.Body)
+	return bodyBytes
+}
+
+func (d *DynaResponse) BodyString() string {
+	bodyBytes := d.Body()
+
+	if len(bodyBytes) > 0 {
+		return string(bodyBytes)
+	}
+
+	return ""
 }
 
 func New[T any](client ...http.Client) *DynaClient[T] {
@@ -31,7 +52,13 @@ func New[T any](client ...http.Client) *DynaClient[T] {
 	return &DynaClient[T]{
 		c,
 		json.New[T](),
+		nil,
 	}
+}
+
+func (c *DynaClient[T]) WithFailCondition(fn func(*http.Response) error) *DynaClient[T] {
+	c.failCondition = fn
+	return c
 }
 
 func (c *DynaClient[T]) WithCustomParser(parser parser.DynaParser[T]) *DynaClient[T] {
@@ -63,8 +90,7 @@ func NewRequest(method string, url string, body interface{}, parserType ...parse
 	}, nil
 }
 
-func (c *DynaClient[T]) Do(req *DynaRequest) (*T, *http.Response, error) {
-
+func (c *DynaClient[T]) Do(req *DynaRequest) (*T, *DynaResponse, error) {
 	encoder := c.DynaParser.Encode
 	if req.DynaEncoder != nil {
 		encoder = req.DynaEncoder.Encode
@@ -80,23 +106,35 @@ func (c *DynaClient[T]) Do(req *DynaRequest) (*T, *http.Response, error) {
 
 	response, err := c.Client.Do(req.Request)
 
+	dynaResponse := DynaResponse{
+		failed:   false,
+		Response: response,
+	}
+
 	if err != nil {
-		return nil, response, err
+		return nil, &dynaResponse, err
+	}
+
+	if c.failCondition != nil {
+		if err := c.failCondition(dynaResponse.Response); err != nil {
+			dynaResponse.failed = true
+			return nil, &dynaResponse, err
+		}
 	}
 
 	if response.Body != nil {
-		bodyBytes, _ := io.ReadAll(response.Body)
-		response.Body.Close()
-		response.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		bodyBytes, _ := io.ReadAll(dynaResponse.Response.Body)
+		dynaResponse.Response.Body.Close()
+		dynaResponse.Response.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 
-		responseValue, err := c.Decode(response.Body)
+		responseValue, err := c.Decode(dynaResponse.Response.Body)
 
 		if err != nil {
-			return nil, response, err
+			return nil, &dynaResponse, err
 		}
 
-		return responseValue, response, nil
+		return responseValue, &dynaResponse, nil
 	}
 
-	return nil, response, nil
+	return nil, &dynaResponse, nil
 }

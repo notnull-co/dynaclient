@@ -33,7 +33,9 @@ func TestClient(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	response, _, err := New[Response]().Do(req)
+	client := New[Response]()
+
+	response, _, err := client.Do(req)
 
 	if err != nil {
 		t.Fatal(err)
