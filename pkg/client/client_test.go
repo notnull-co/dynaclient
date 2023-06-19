@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/notnull-co/dynaclient/pkg/parser"
 )
 
 type Payload struct {
@@ -22,18 +24,18 @@ func TestClient(t *testing.T) {
 	}))
 	defer svr.Close()
 
-	payload := Payload{
-		Name: "muri",
-		Age:  10,
-	}
+	// payload := Payload{
+	// 	Name: "muri",
+	// 	Age:  10,
+	// }
 
-	req, err := NewRequest(http.MethodPost, svr.URL, payload)
+	req, err := NewRequest(http.MethodPost, svr.URL, "Oi")
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	client := New[Response]()
+	client := New[string]().WithParser(parser.Text)
 
 	response, _, err := client.Do(req)
 

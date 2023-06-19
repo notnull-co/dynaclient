@@ -3,7 +3,9 @@ package parser
 import "io"
 
 const (
-	Json DynaParserType = 0
+	Json DynaParserType = 1
+	Xml  DynaParserType = 2
+	Text DynaParserType = 3
 )
 
 type DynaParserType int
