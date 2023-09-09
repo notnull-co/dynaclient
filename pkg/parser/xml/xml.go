@@ -48,10 +48,6 @@ func Decode[T any](reader io.Reader) (*T, error) {
 }
 
 func Encode(payload any) (io.ReadCloser, error) {
-	if payload == nil {
-		return nil, nil
-	}
-
 	b, err := xml.Marshal(payload)
 
 	if err != nil {

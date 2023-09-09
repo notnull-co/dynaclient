@@ -90,19 +90,31 @@ func NewRequest(method string, url string, body interface{}, parserType ...parse
 	}, nil
 }
 
+func isPayloadEmpty(payload any) bool {
+	if value, ok := payload.(*any); ok {
+		if *value == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (c *DynaClient[T]) Do(req *DynaRequest) (*T, *DynaResponse, error) {
 	encoder := c.DynaParser.Encode
 	if req.DynaEncoder != nil {
 		encoder = req.DynaEncoder.Encode
 	}
 
-	body, err := encoder(req.payload)
+	if !isPayloadEmpty(req.payload) {
+		body, err := encoder(req.payload)
 
-	if err != nil {
-		return nil, nil, err
+		if err != nil {
+			return nil, nil, err
+		}
+
+		req.Body = body
 	}
-
-	req.Body = body
 
 	response, err := c.Client.Do(req.Request)
 

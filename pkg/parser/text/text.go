@@ -43,9 +43,6 @@ func Decode[T any](reader io.Reader) (*T, error) {
 }
 
 func Encode(payload any) (io.ReadCloser, error) {
-	if payload == nil {
-		return nil, nil
-	}
 	payloadValue := *payload.(*any)
 
 	return io.NopCloser(bytes.NewReader([]byte(payloadValue.(string)))), nil
